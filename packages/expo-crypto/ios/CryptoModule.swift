@@ -3,28 +3,35 @@
 import CommonCrypto
 import ExpoModulesCore
 
+@ExpoModule("ExpoCrypto")
 public class CryptoModule: Module {
-  public func definition() -> ModuleDefinition {
-    Name("ExpoCrypto")
-
-    AsyncFunction("digestStringAsync", digestString)
-
-    Function("digestString", digestString)
-
-    Function("getRandomValues", getRandomValues)
-
-    Function("digest", digest)
-
-    Function("randomUUID", randomUUID())
+  @JS
+  func digestStringAsync(algorithm: DigestAlgorithm, str: String, options: DigestOptions) async throws -> String {
+    return try digestStringImpl(algorithm: algorithm, str: str, options: options)
   }
 
-  @OptimizedFunction
-  private func randomUUID() -> String {
-    return UUID().uuidString.lowercased()
+  @JS
+  func digestString(algorithm: DigestAlgorithm, str: String, options: DigestOptions) throws -> String {
+    return try digestStringImpl(algorithm: algorithm, str: str, options: options)
+  }
+
+  @JS
+  func getRandomValues(array: TypedArray) throws -> TypedArray {
+    return try getRandomValuesImpl(array: array)
+  }
+
+  @JS
+  func digest(algorithm: DigestAlgorithm, output: TypedArray, data: TypedArray) {
+    digestImpl(algorithm: algorithm, output: output, data: data)
+  }
+
+  @JS
+  func randomUUID() -> String {
+    return randomUUIDImpl()
   }
 }
 
-private func digestString(algorithm: DigestAlgorithm, str: String, options: DigestOptions) throws -> String {
+private func digestStringImpl(algorithm: DigestAlgorithm, str: String, options: DigestOptions) throws -> String {
   guard let data = str.data(using: .utf8) else {
     throw LossyConversionException()
   }
@@ -44,7 +51,7 @@ private func digestString(algorithm: DigestAlgorithm, str: String, options: Dige
   }
 }
 
-private func getRandomValues(array: TypedArray) throws -> TypedArray {
+private func getRandomValuesImpl(array: TypedArray) throws -> TypedArray {
   let status = SecRandomCopyBytes(
     kSecRandomDefault,
     array.byteLength,
@@ -57,18 +64,22 @@ private func getRandomValues(array: TypedArray) throws -> TypedArray {
   return array
 }
 
-private func digest(algorithm: DigestAlgorithm, output: TypedArray, data: TypedArray) {
+private func digestImpl(algorithm: DigestAlgorithm, output: TypedArray, data: TypedArray) {
   let outputPtr = output.rawPointer.assumingMemoryBound(to: UInt8.self)
   _ = algorithm.digest(data.rawPointer, UInt32(data.byteLength), outputPtr)
 }
 
-private final class LossyConversionException: Exception {
+private func randomUUIDImpl() -> String {
+  return UUID().uuidString.lowercased()
+}
+
+private final class LossyConversionException: Exception, @unchecked Sendable {
   override var reason: String {
     "Unable to convert given string without losing some information"
   }
 }
 
-private final class FailedGeneratingRandomBytesException: GenericException<OSStatus> {
+private final class FailedGeneratingRandomBytesException: GenericException<OSStatus>, @unchecked Sendable {
   override var reason: String {
     "Generating random bytes has failed with OSStatus code: \(param)"
   }

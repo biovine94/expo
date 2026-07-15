@@ -1,14 +1,14 @@
 import CryptoKit
 import ExpoModulesCore
 
-internal struct SealedDataConfig: Record {
-  @Field
+@Record
+internal struct SealedDataConfig {
   var ivLength: Int = DEFAULT_IV_LENGTH
 
-  @Field
   var tagLength: Int = DEFAULT_TAG_LENGTH
 }
 
+@SharedObject
 final class SealedData: SharedObject {
   private var inner: AES.GCM.SealedBox
 
@@ -63,6 +63,21 @@ final class SealedData: SharedObject {
 
   var tag: Data {
     inner.tag
+  }
+
+  @JS
+  var combinedSize: Int {
+    combined.count
+  }
+
+  @JS
+  var ivSize: Int {
+    iv.count
+  }
+
+  @JS
+  var tagSize: Int {
+    tag.count
   }
 
   func ciphertext(withTag: Bool) -> Data {

@@ -17,6 +17,7 @@ enum KeySize: Int, Enumerable {
   }
 }
 
+@SharedObject
 final class EncryptionKey: SharedObject {
   private var inner: CryptoKit.SymmetricKey
 
@@ -46,6 +47,7 @@ final class EncryptionKey: SharedObject {
     try self.init(bytes: bytes)
   }
 
+  @JS("size")
   var keySize: KeySize {
     // size is always verified when inner is created
     // swiftlint:disable:next force_unwrapping

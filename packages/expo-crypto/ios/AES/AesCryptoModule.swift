@@ -15,27 +15,24 @@ enum DataFormat: String, Enumerable {
   case base64
 }
 
-internal struct CiphertextOptions: Record {
-  @Field
+@Record
+internal struct CiphertextOptions {
   var includeTag: Bool = false
 
-  @Field
   var outputFormat: DataFormat = .bytes
 }
 
-internal struct EncryptOptions: Record {
-  @Field
+@Record
+internal struct EncryptOptions {
   var nonce: EitherOfThree<String, Data, Int>?
 
-  @Field
   var additionalData: BinaryInput?
 }
 
-internal struct DecryptOptions: Record {
-  @Field
+@Record
+internal struct DecryptOptions {
   var output: DataFormat = .bytes
 
-  @Field
   var additionalData: BinaryInput?
 }
 
@@ -55,10 +52,9 @@ extension BinaryInput {
   }
 }
 
+@ExpoModule("ExpoCryptoAES")
 public class AesCryptoModule: Module {
   public func definition() -> ModuleDefinition {
-    Name("ExpoCryptoAES")
-
     AsyncFunction("encryptAsync", self.encrypt)
     AsyncFunction("decryptAsync", self.decrypt)
 
@@ -71,7 +67,6 @@ public class AesCryptoModule: Module {
         key.encoded(with: encoding)
       }
 
-      Property("size") { (key: EncryptionKey) in key.keySize }
     }
 
     Class("SealedData", SealedData.self) {
@@ -99,16 +94,6 @@ public class AesCryptoModule: Module {
           ciphertextWithTag: ciphertext.intoData(),
           tagLength: tagLength
         )
-      }
-
-      Property("combinedSize") { (sealedData: SealedData) in
-        sealedData.combined.count
-      }
-      Property("ivSize") { (sealedData: SealedData) in
-        sealedData.iv.count
-      }
-      Property("tagSize") { (sealedData: SealedData) in
-        sealedData.tag.count
       }
 
       AsyncFunction("iv") { (sealedData: SealedData, format: DataFormat?) -> Any in
