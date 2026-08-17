@@ -160,7 +160,8 @@ class NetworkRequestInterceptor private constructor(
       fallbackStart = startedAt,
       fallbackEnd = endDate,
       totalDuration = totalDuration,
-      error = error
+      error = error,
+      cancelled = call.isCanceled()
     )
     monitor.record(snapshot)
   }
@@ -198,7 +199,8 @@ internal fun buildSnapshot(
   fallbackStart: Date,
   fallbackEnd: Date,
   totalDuration: Double,
-  error: IOException?
+  error: IOException?,
+  cancelled: Boolean = false
 ): NetworkRequest {
   val redirects = response?.let { buildRedirectChain(it) } ?: emptyList()
 
@@ -260,6 +262,8 @@ internal fun buildSnapshot(
     // Falls back to the class name because an exception is allowed to carry no message at all, and
     // a null description would read as "this request succeeded" to `isFailed`.
     errorDescription = failure?.let { it.localizedMessage ?: it.message ?: it.javaClass.simpleName },
+    errorType = failure?.javaClass?.name,
+    cancelled = failure != null && cancelled,
     redirects = redirects
   )
 }
@@ -302,7 +306,9 @@ internal fun buildRedirectChain(final: Response): List<NetworkRequest.Redirect> 
       NetworkRequest.Redirect(
         fromUrl = prior.request.url.toString(),
         toUrl = next.request.url.toString(),
-        statusCode = prior.code
+        statusCode = prior.code,
+        // OkHttp reports 0 when it has no timestamp for the response.
+        respondedAtMs = prior.receivedResponseAtMillis.takeIf { it > 0 }
       )
     )
     next = prior

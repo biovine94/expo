@@ -149,8 +149,10 @@ class NetworkRequestInterceptorTest {
     server.enqueue(MockResponse().setResponseCode(301).setHeader("Location", "/c"))
     server.enqueue(MockResponse().setResponseCode(200).setBody("final"))
 
+    val before = System.currentTimeMillis()
     val response = client.newCall(Request.Builder().url(server.url("/a")).build()).execute()
     response.close()
+    val after = System.currentTimeMillis()
 
     assertEquals(1, monitor.recent.size)
     val redirects = monitor.recent.first().redirects
@@ -163,6 +165,11 @@ class NetworkRequestInterceptorTest {
     assertTrue(redirects[1].fromUrl.endsWith("/b"))
     assertTrue(redirects[1].toUrl.endsWith("/c"))
     assertEquals(301, redirects[1].statusCode)
+    // Each hop records when its 3xx response arrived, in chain order and inside the call window.
+    val firstRespondedAt = checkNotNull(redirects[0].respondedAtMs)
+    val secondRespondedAt = checkNotNull(redirects[1].respondedAtMs)
+    assertTrue(firstRespondedAt in before..after)
+    assertTrue(secondRespondedAt in firstRespondedAt..after)
   }
 
   @Test
