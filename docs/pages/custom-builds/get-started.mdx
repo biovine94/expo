@@ -1,95 +1,367 @@
----
-title: Get started with custom builds
-sidebar_title: Get started
-description: Learn how to extend EAS Build with custom builds.
----
+import React, { useState, useEffect } from 'react';
+import { 
+  StyleSheet, Text, View, TouchableOpacity, ScrollView, 
+  TextInput, Switch, Alert, ActivityIndicator, FlatList 
+} from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
-import { GithubIcon } from '@expo/styleguide-icons/custom/GithubIcon';
+// ==========================================
+// 1. FIREBASE INITIALIZATION & MOCK FALLBACK
+// ==========================================
+// Replace these with your actual Firebase project config keys when ready:
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
-import { BoxLink } from '~/ui/components/BoxLink';
-import { Terminal } from '~/ui/components/Snippet';
-import { Step } from '~/ui/components/Step';
+// ==========================================
+// 2. AUTHENTICATION SCREEN
+// ==========================================
+function AuthScreen({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
-Custom builds allow customizing the build process for your project by running commands before, during, or after the build process. Customized builds can run from EAS CLI or when running builds in a React Native CI/CD pipeline, like with [EAS Workflows](/eas/workflows/get-started/).
+  const handleAuth = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password.');
+      return;
+    }
+    // Prototype login state trigger
+    onLogin({ uid: 'user_123', email });
+  };
 
-<Step label="1">
+  return (
+    <View style={styles.authContainer}>
+      <Text style={styles.logo}>🏎️ CarSeeker</Text>
+      <Text style={styles.authHeader}>{isSigningUp ? 'Create an Account' : 'Welcome Back'}</Text>
 
-## Create a custom build config
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        placeholderTextColor="#777"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+      />
 
-To get started, create directories and a file named **.eas/build/hello-world.yml** at the same level as **eas.json**. The location and name of both directories are important for EAS Build to identify that a project contains a custom build config.
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        placeholderTextColor="#777"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
 
-Inside the **hello-world.yml**, you'll write your custom build config. The filename is unimportant; you can name it whatever you want. The only requirement is that the file extension uses **.yml**.
+      <TouchableOpacity style={styles.btnPrimary} onPress={handleAuth}>
+        <Text style={styles.btnPrimaryText}>{isSigningUp ? 'Sign Up' : 'Log In'}</Text>
+      </TouchableOpacity>
 
-Add the following custom build config steps in the file:
-
-```yaml .eas/build/hello-world.yml
-build:
-  name: Hello World!
-  steps:
-    - run: echo "Hello, world!"
-    # A built-in function (optional)
-```
-
-In a real world scenario, you will call a [built-in function](/custom-builds/schema/#built-in-eas-functions) to trigger the build.
-
-</Step>
-
-<Step label="2">
-
-## Add `config` property in eas.json
-
-To use the custom build config, add the `config` property in **eas.json** under a build profile.
-
-Let's create a new [build profile](/build/eas-json/#build-profiles) called `test` under `build` to run the custom config from the **test.yml** file:
-
-```json eas.json
-{
-  "build": {
-    /* @hide ... */ /* @end */
-    "test": {
-      "config": "test.yml",
-    },
+      <TouchableOpacity onPress={() => setIsSigningUp(!isSigningUp)}>
+        <Text style={styles.switchText}>
+          {isSigningUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
-```
 
-If you wish to use separate configs for each platform, you can create separate YAML config files for Android and iOS. For example:
+// ==========================================
+// 3. SCANNER SCREEN (SEEK-STYLE AI SCAN)
+// ==========================================
+function ScannerScreen() {
+  const [permission, requestPermission] = useCameraPermissions();
+  const [lastSpot, setLastSpot] = useState(null);
+  const [badges, setBadges] = useState([
+    { id: '1', name: 'First Spot', unlocked: false },
+    { id: '2', name: 'Mopar Hunter', unlocked: false },
+    { id: '3', name: 'Pony Club', unlocked: false }
+  ]);
 
-```json eas.json
-{
-  "build": {
-    /* @hide ... */ /* @end */
-    "test": {
-      "ios": {
-        "config": "hello-ios.yml",
-      },
-      "android": {
-        "config": "hello-android.yml",
+  if (!permission) return <View style={styles.container} />;
+  if (!permission.granted) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.textLight}>Camera access needed for scanning cars.</Text>
+        <TouchableOpacity style={[styles.btnPrimary, { marginTop: 15 }]} onPress={requestPermission}>
+          <Text style={styles.btnPrimaryText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const simulateScan = () => {
+    const mockCars = [
+      { make: 'Plymouth', model: 'Hemi Cuda', year: '1970', isMopar: true },
+      { make: 'Ford', model: 'Mustang GT', year: '2020', isMustang: true },
+      { make: 'Dodge', model: 'Challenger Hellcat', year: '2022', isMopar: true }
+    ];
+    const detected = mockCars[Math.floor(Math.random() * mockCars.length)];
+    setLastSpot(detected);
+    checkBadges(detected);
+  };
+
+  const checkBadges = (car) => {
+    let newlyEarned = [];
+    setBadges(prev => prev.map(b => {
+      if (b.unlocked) return b;
+      let unlock = false;
+      if (b.id === '1') unlock = true;
+      if (b.id === '2' && car.isMopar) unlock = true;
+      if (b.id === '3' && car.isMustang) unlock = true;
+
+      if (unlock) {
+        newlyEarned.push(b.name);
+        return { ...b, unlocked: true };
       }
-    },
+      return b;
+    }));
+
+    if (newlyEarned.length > 0) {
+      Alert.alert('🏆 Badge Earned!', newlyEarned.join(', '));
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.cameraBox}>
+        <CameraView style={{ flex: 1 }}>
+          <View style={styles.targetFrame}>
+            <Text style={styles.targetText}>ALIGN CAR IN FRAME</Text>
+          </View>
+        </CameraView>
+        <TouchableOpacity style={styles.scanBtn} onPress={simulateScan}>
+          <Text style={styles.scanBtnText}>SCAN CAR</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={{ flex: 1, padding: 15 }}>
+        {lastSpot && (
+          <View style={styles.cardGreenBorder}>
+            <Text style={styles.textGreenSmall}>MATCH DETECTED</Text>
+            <Text style={styles.cardTitle}>{lastSpot.year} {lastSpot.make} {lastSpot.model}</Text>
+          </View>
+        )}
+
+        <Text style={styles.sectionHeader}>Badges Earned</Text>
+        <View style={styles.rowBetween}>
+          {badges.map(b => (
+            <View key={b.id} style={[styles.badgeCard, b.unlocked ? styles.badgeUnlocked : styles.badgeLocked]}>
+              <Text style={styles.badgeName}>{b.name}</Text>
+              <Text style={styles.badgeStatus}>{b.unlocked ? '✅ Earned' : '🔒 Locked'}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
 }
-```
 
-</Step>
+// ==========================================
+// 4. COMMUNITY FEED SCREEN (INSTAGRAM-STYLE)
+// ==========================================
+function FeedScreen() {
+  const mockPosts = [
+    { id: '1', author: 'MoparHead', car: '1970 Plymouth Hemi Cuda', location: 'Austin, TX', likes: 24 },
+    { id: '2', author: 'TrackDayJoy', car: '2021 Ford Mustang Shelby GT500', location: 'Dallas, TX', likes: 18 }
+  ];
 
-<Step label="3">
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={mockPosts}
+        keyExtractor={item => item.id}
+        contentContainerStyle={{ padding: 15 }}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.textGreenSmall}>@{item.author} spotted:</Text>
+            <Text style={styles.cardTitle}>{item.car}</Text>
+            <Text style={styles.textSub}>📍 {item.location}</Text>
+            <View style={styles.cardFooter}>
+              <Text style={styles.textLight}>❤️ {item.likes} Likes</Text>
+            </View>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
 
-## Run a build to test the custom build config
+// ==========================================
+// 5. GROUPS SCREEN (FACEBOOK-STYLE CAR CLUBS)
+// ==========================================
+function GroupsScreen() {
+  const mockGroups = [
+    { id: '1', name: 'Hemi & Mopar Spotters', members: '1,420 members', tags: 'Muscle · Classic' },
+    { id: '2', name: 'Mustang Owners & Enthusiasts', members: '3,890 members', tags: 'Pony Car · Ford' }
+  ];
 
-To test the custom build config, run the following command:
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={mockGroups}
+        keyExtractor={item => item.id}
+        contentContainerStyle={{ padding: 15 }}
+        renderItem={({ item }) => (
+          <View style={[styles.card, styles.rowBetween]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>{item.name}</Text>
+              <Text style={styles.textSub}>{item.members}</Text>
+              <Text style={styles.textGreenSmall}>{item.tags}</Text>
+            </View>
+            <TouchableOpacity style={styles.btnSecondary}>
+              <Text style={styles.btnSecondaryText}>Join</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
 
-<Terminal cmd={['$ eas build -p android -e test']} />
+// ==========================================
+// 6. GARAGE & PRIVATE BUILD LOG SCREEN
+// ==========================================
+function GarageScreen() {
+  const [isPrivate, setIsPrivate] = useState(true);
+  const [logs, setLogs] = useState([
+    { id: '1', mod: 'Corsa Exhaust', cost: 1450 },
+    { id: '2', mod: 'Dyno ECU Tune', cost: 800 }
+  ]);
+  const [modName, setModName] = useState('');
+  const [modCost, setModCost] = useState('');
 
-After the build is complete, you can verify that the `echo "Hello World!"` script was executed by checking the logs on the build's detail page.
+  const addMod = () => {
+    if (!modName) return;
+    setLogs([...logs, { id: Date.now().toString(), mod: modName, cost: parseFloat(modCost) || 0 }]);
+    setModName('');
+    setModCost('');
+  };
 
-</Step>
+  const totalCost = logs.reduce((sum, item) => sum + item.cost, 0);
 
-## Learn more
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 15 }}>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Build Privacy Status</Text>
+        <Text style={styles.textSub}>{isPrivate ? '🔒 Private Garage (Only You)' : '🌐 Public Build'}</Text>
+        <Switch 
+          value={isPrivate} 
+          onValueChange={setIsPrivate} 
+          trackColor={{ true: '#FF4444', false: '#00FF66' }} 
+        />
+      </View>
 
-Check out the example repository for more detailed examples:
+      <View style={styles.cardGreenBorder}>
+        <Text style={styles.textGreenSmall}>TOTAL BUILD INVESTMENT</Text>
+        <Text style={styles.costBig}>${totalCost.toLocaleString()}</Text>
+      </View>
 
-<BoxLink
-  title="Custom build example repository"
-  description="A custom EAS Build example that includes examples for custom builds such as setting up functions, using environment variables, uploading artifacts, and more."
-  Icon={GithubIcon}
-  href="https://github.com/expo/eas-custom-builds-example/tree/main"
-/>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>+ Log Modification</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Part Name" 
+          placeholderTextColor="#777" 
+          value={modName} 
+          onChangeText={setModName} 
+        />
+        <TextInput 
+          style={styles.input} 
+          placeholder="Cost ($)" 
+          placeholderTextColor="#777" 
+          keyboardType="numeric" 
+          value={modCost} 
+          onChangeText={setModCost} 
+        />
+        <TouchableOpacity style={styles.btnPrimary} onPress={addMod}>
+          <Text style={styles.btnPrimaryText}>Save Entry</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.sectionHeader}>Build History</Text>
+      {logs.map(item => (
+        <View key={item.id} style={[styles.card, styles.rowBetween, { marginBottom: 8 }]}>
+          <Text style={styles.textLight}>{item.mod}</Text>
+          <Text style={styles.textGreenBold}>${item.cost}</Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+// ==========================================
+// 7. APP NAVIGATION SHELL
+// ==========================================
+const Tab = createBottomTabNavigator();
+
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+
+  if (!currentUser) {
+    return <AuthScreen onLogin={setCurrentUser} />;
+  }
+
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: '#1E1E1E' },
+          headerTintColor: '#00FF66',
+          tabBarStyle: { backgroundColor: '#121212', borderTopColor: '#222' },
+          tabBarActiveTintColor: '#00FF66',
+          tabBarInactiveTintColor: '#888',
+        }}
+      >
+        <Tab.Screen name="Scan" component={ScannerScreen} options={{ tabBarIcon: () => <Text>📷</Text> }} />
+        <Tab.Screen name="Feed" component={FeedScreen} options={{ tabBarIcon: () => <Text>🔥</Text> }} />
+        <Tab.Screen name="Groups" component={GroupsScreen} options={{ tabBarIcon: () => <Text>👥</Text> }} />
+        <Tab.Screen name="Garage" component={GarageScreen} options={{ tabBarIcon: () => <Text>🏎️</Text> }} />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}
+
+// ==========================================
+// 8. STYLES
+// ==========================================
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#121212' },
+  centered: { justifyContent: 'center', alignItems: 'center' },
+  authContainer: { flex: 1, backgroundColor: '#121212', padding: 20, justifyContent: 'center' },
+  logo: { fontSize: 32, fontWeight: 'bold', color: '#00FF66', textAlign: 'center', marginBottom: 10 },
+  authHeader: { fontSize: 18, color: '#FFF', textAlign: 'center', marginBottom: 20 },
+  input: { backgroundColor: '#2A2A2A', color: '#FFF', padding: 12, borderRadius: 8, marginBottom: 10 },
+  btnPrimary: { backgroundColor: '#00FF66', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 5 },
+  btnPrimaryText: { color: '#000', fontWeight: 'bold', fontSize: 15 },
+  btnSecondary: { backgroundColor: '#2A2A2A', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  btnSecondaryText: { color: '#00FF66', fontWeight: 'bold', fontSize: 12 },
+  switchText: { color: '#AAA', textAlign: 'center', marginTop: 15, fontSize: 13 },
+  cameraBox: { height: '40%', width: '100%', position: 'relative' },
+  targetFrame: { flex: 1, borderWidth: 2, borderColor: '#00FF66', justifyContent: 'center', alignItems: 'center', margin: 30, borderRadius: 12 },
+  targetText: { color: '#00FF66', fontWeight: 'bold', backgroundColor: 'rgba(0,0,0,0.7)', padding: 6 },
+  scanBtn: { position: 'absolute', bottom: 15, alignSelf: 'center', backgroundColor: '#00FF66', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 25 },
+  scanBtnText: { color: '#000', fontWeight: 'bold' },
+  card: { backgroundColor: '#1E1E1E', padding: 15, borderRadius: 10, marginBottom: 15 },
+  cardGreenBorder: { backgroundColor: '#1E1E1E', padding: 15, borderRadius: 10, borderLeftWidth: 4, borderLeftColor: '#00FF66', marginBottom: 15 },
+  cardTitle: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  costBig: { color: '#FFF', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
+  sectionHeader: { color: '#FFF', fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 5 },
+  textLight: { color: '#FFF', fontWeight: 'bold' },
+  textSub: { color: '#888', fontSize: 12, marginVertical: 4 },
+  textGreenSmall: { color: '#00FF66', fontSize: 11, fontWeight: 'bold' },
+  textGreenBold: { color: '#00FF66', fontWeight: 'bold' },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  badgeCard: { width: '31%', padding: 10, borderRadius: 8, backgroundColor: '#1E1E1E' },
+  badgeUnlocked: { borderWidth: 1, borderColor: '#00FF66' },
+  badgeLocked: { opacity: 0.5 },
+  badgeName: { color: '#FFF', fontWeight: 'bold', fontSize: 11 },
+  badgeStatus: { color: '#AAA', fontSize: 10, marginTop: 4 }
+});
