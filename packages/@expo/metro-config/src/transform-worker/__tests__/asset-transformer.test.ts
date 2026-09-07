@@ -1,7 +1,7 @@
 import * as generator from '@babel/generator';
-import { getAssetData, type AssetData } from '@expo/metro/metro/Assets';
 import * as fs from 'fs';
 import { vol } from 'memfs';
+import { getAssetData, type AssetData } from 'metro/private/Assets';
 
 import { transform } from '../asset-transformer';
 
@@ -28,6 +28,8 @@ function getMockFontDev(): AssetData {
     __packager_asset: true,
     fileSystemLocation: '/root/local',
     httpServerLocation: '/assets/?unstable_path=.%2Fassets%2Ffonts',
+    width: null,
+    height: null,
     scales: [1],
     hash: '49a79d66bdea2debf1832bf4d7aca127',
     name: 'SpaceMono-Regular',
@@ -54,7 +56,7 @@ function getMockImageExport(): AssetData {
 
 jest.mock('fs');
 
-jest.mock('@expo/metro/metro/Assets', () => ({ getAssetData: jest.fn() }));
+jest.mock('metro/private/Assets', () => ({ getAssetData: jest.fn() }));
 
 beforeEach(() => {
   jest.resetModules();

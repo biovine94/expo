@@ -1,12 +1,12 @@
-import metroConfigDefaults from '@expo/metro/metro-config/defaults';
+import metroConfigDefaults from 'metro-config/private/defaults/index';
 import type {
   Dependency as MetroDependency,
   MixedOutput,
   Module,
   ReadOnlyGraph,
   SerializerOptions,
-} from '@expo/metro/metro/DeltaBundler/types';
-import CountingSet from '@expo/metro/metro/lib/CountingSet';
+} from 'metro/private/DeltaBundler/types';
+import CountingSet from 'metro/private/lib/CountingSet';
 import * as path from 'path';
 
 import type { Dependency as ExpoTransformDependency } from '../../../transform-worker/collect-dependencies';
@@ -16,7 +16,7 @@ import { wrapTransformResultMaps } from '../../packedMap';
 
 export const projectRoot = '/app';
 
-const METRO_CONFIG_DEFAULTS = metroConfigDefaults.getDefaultValues(null);
+const METRO_CONFIG_DEFAULTS = metroConfigDefaults.getDefaultValues();
 
 type ExpoResolvedDependency = Omit<MetroDependency, 'data'> & {
   data: ExpoTransformDependency;

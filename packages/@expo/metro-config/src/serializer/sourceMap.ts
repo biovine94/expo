@@ -12,14 +12,14 @@ import type {
   HermesFunctionOffsets,
   MetroSourceMapSegmentTuple,
   MixedSourceMap,
-} from '@expo/metro/metro-source-map';
-import type GeneratorClass from '@expo/metro/metro-source-map/Generator';
+} from 'metro-source-map';
+import type GeneratorClass from 'metro-source-map/private/Generator';
 // Central indirection for sourcemap operations in `@expo/metro-config`
 // and `@expo/cli`. Implementations are loaded lazily — `metro-source-map`
 // (and its transitive `@babel/traverse`) at top level adds ~100ms to
 // `@expo/cli` startup.
-import type { SourceMapGeneratorOptions } from '@expo/metro/metro/DeltaBundler/Serializers/sourceMapGenerator';
-import type { Module } from '@expo/metro/metro/DeltaBundler/types';
+import type { SourceMapGeneratorOptions } from 'metro/private/DeltaBundler/Serializers/sourceMapGenerator';
+import type { Module } from 'metro/private/DeltaBundler/types';
 
 import type { ModuleSourceMap } from './jsOutput';
 import { PackedMap, SENTINEL, STRIDE, isSerializableSourceMap } from './packedMap';
@@ -95,7 +95,7 @@ type GeneratorCtor = new () => GeneratorClass;
 let _Generator: GeneratorCtor | undefined;
 function loadGenerator(): GeneratorCtor {
   if (!_Generator) {
-    _Generator = require('@expo/metro/metro-source-map/Generator').default;
+    _Generator = require('metro-source-map/private/Generator').default;
   }
   return _Generator!;
 }
@@ -103,12 +103,12 @@ function loadGenerator(): GeneratorCtor {
 // `.js` suffix required for jest's resolver to find the file under
 // `@expo/metro`'s `exports` map (see `getCssDeps.ts`/`getAssets.ts` for
 // the same pattern).
-type IsJsModule = typeof import('@expo/metro/metro/DeltaBundler/Serializers/helpers/js').isJsModule;
+type IsJsModule = typeof import('metro/private/DeltaBundler/Serializers/helpers/js').isJsModule;
 
 let _isJsModule: IsJsModule | undefined;
 function loadMetroSerializerHelpers(): { isJsModule: IsJsModule } {
   if (!_isJsModule) {
-    _isJsModule = require('@expo/metro/metro/DeltaBundler/Serializers/helpers/js.js').isJsModule;
+    _isJsModule = require('metro/private/DeltaBundler/Serializers/helpers/js').isJsModule;
   }
   return { isJsModule: _isJsModule! };
 }
@@ -168,7 +168,7 @@ function feedModuleSegmentsPacked(
 // silently forcing the encoder onto the slow Proxy path.
 function readSourceMapInfo(
   module: Module,
-  options: SourceMapGeneratorOptions
+  options: ExpoSourceMapOptions
 ): {
   path: string;
   source: string;
@@ -229,7 +229,7 @@ interface JsOutputData {
 function processModuleIntoGenerator(
   generator: GeneratorClass,
   module: Module,
-  options: SourceMapGeneratorOptions,
+  options: ExpoSourceMapOptions,
   carryOver: number
 ): number {
   const info = readSourceMapInfo(module, options);
@@ -265,8 +265,11 @@ function filterModules(
 // Adds `debugId`, which is emitted during JSON construction so callers
 // don't pay for a parse + re-stringify roundtrip on a freshly-built
 // sourcemap.
-export interface ExpoSourceMapOptions extends SourceMapGeneratorOptions {
+export interface ExpoSourceMapOptions extends Omit<SourceMapGeneratorOptions, 'getSourceUrl'> {
   debugId?: string;
+  // Metro's generated types keep this key required because it is a nullable Flow property. It is
+  // read with `?.` below, so callers may leave it off entirely.
+  getSourceUrl?: SourceMapGeneratorOptions['getSourceUrl'];
 }
 
 // Splice `,"debugId":"..."` in front of the trailing `}` of an already
@@ -333,7 +336,7 @@ export async function sourceMapStringNonBlocking(
 // chain — so without rerouting it, every dev `.map` fetch iterates the
 // `data.map` Proxy and the encoder fast path is unreachable.
 export function patchMetroSourceMapStringForPackedMaps(): void {
-  const stock = require('@expo/metro/metro/DeltaBundler/Serializers/sourceMapString');
+  const stock = require('metro/private/DeltaBundler/Serializers/sourceMapString');
   stock.sourceMapString = sourceMapString;
   stock.sourceMapStringNonBlocking = sourceMapStringNonBlocking;
 }

@@ -1923,9 +1923,6 @@ importers:
       '@expo/log-box-utils':
         specifier: workspace:^
         version: link:../log-box-utils
-      '@expo/metro':
-        specifier: ~56.0.2
-        version: 56.0.2
       '@expo/metro-config':
         specifier: workspace:~
         version: link:../metro-config
@@ -2016,6 +2013,24 @@ importers:
       lan-network:
         specifier: ^0.2.1
         version: 0.2.1
+      metro:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-babel-transformer:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-config:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-core:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-file-map:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-resolver:
+        specifier: 0.84.5
+        version: 0.84.5
       multitars:
         specifier: ^1.0.2
         version: 1.0.2
@@ -2200,6 +2215,9 @@ importers:
       memfs:
         specifier: ^3.2.0
         version: 3.6.0
+      metro-source-map:
+        specifier: 0.84.5
+        version: 0.84.5
       nock:
         specifier: ^14.0.10
         version: 14.0.11
@@ -2748,6 +2766,33 @@ importers:
       lightningcss:
         specifier: ^1.30.1
         version: 1.32.0
+      metro:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-babel-transformer:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-cache:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-cache-key:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-config:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-runtime:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-source-map:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-transform-plugins:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-transform-worker:
+        specifier: 0.84.5
+        version: 0.84.5
       noxcturnal:
         specifier: ^0.1.0
         version: 0.1.0
@@ -2828,9 +2873,6 @@ importers:
         specifier: ^1.0.8
         version: 1.0.8
     devDependencies:
-      '@expo/metro':
-        specifier: ~56.0.2
-        version: 56.0.2
       '@types/debug':
         specifier: ^4.1.7
         version: 4.1.12
@@ -2852,6 +2894,9 @@ importers:
       memfs:
         specifier: ^3.6.0
         version: 3.6.0
+      metro-config:
+        specifier: 0.84.5
+        version: 0.84.5
 
   packages/@expo/metro-runtime:
     dependencies:
@@ -3313,9 +3358,6 @@ importers:
       '@expo/config':
         specifier: workspace:*
         version: link:../@expo/config
-      '@expo/metro':
-        specifier: ~56.0.2
-        version: 56.0.2
       '@expo/metro-config':
         specifier: workspace:*
         version: link:../@expo/metro-config
@@ -3349,6 +3391,15 @@ importers:
       jest:
         specifier: ^29.2.1
         version: 29.7.0(@types/node@22.20.1)(ts-node@10.9.2(@swc/core@1.15.18)(@types/node@22.20.1)(typescript@6.0.3))
+      metro-config:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-minify-terser:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-transform-plugins:
+        specifier: 0.84.5
+        version: 0.84.5
       react-refresh:
         specifier: ^0.14.2
         version: 0.14.2
@@ -3680,9 +3731,6 @@ importers:
       '@expo/log-box-utils':
         specifier: workspace:^
         version: link:../@expo/log-box-utils
-      '@expo/metro':
-        specifier: ~56.0.2
-        version: 56.0.2
       '@expo/metro-config':
         specifier: workspace:~
         version: link:../@expo/metro-config
@@ -3713,6 +3761,12 @@ importers:
       expo-modules-core:
         specifier: workspace:~
         version: link:../expo-modules-core
+      metro-runtime:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-source-map:
+        specifier: 0.84.5
+        version: 0.84.5
       pretty-format:
         specifier: ^29.7.0
         version: 29.7.0
@@ -4511,9 +4565,6 @@ importers:
       '@expo/json-file':
         specifier: workspace:*
         version: link:../@expo/json-file
-      '@expo/metro':
-        specifier: ~56.0.2
-        version: 56.0.2
       '@expo/schemer':
         specifier: workspace:*
         version: link:../@expo/schemer
@@ -4562,6 +4613,9 @@ importers:
       memfs:
         specifier: ^3.2.0
         version: 3.6.0
+      metro-config:
+        specifier: 0.84.5
+        version: 0.84.5
       ora:
         specifier: 3.4.0
         version: 3.4.0

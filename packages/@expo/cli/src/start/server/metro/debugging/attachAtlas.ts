@@ -1,7 +1,7 @@
 import { events } from '2g';
 import type { SerializedError } from '2g';
-import type { ConfigT as MetroConfig } from '@expo/metro/metro-config';
 import type { Server as ConnectServer } from 'connect';
+import type { ConfigT as MetroConfig } from 'metro-config';
 
 import { env } from '../../../../utils/env';
 import type { EnsureDependenciesOptions } from '../../../doctor/dependencies/ensureDependenciesAsync';
