@@ -465,7 +465,7 @@ export async function instantiateMetroAsync(
   });
 
   // Support HTTPS based on the metro's tls server config
-  // TODO(@kitten): Remove cast once `@expo/metro` is updated to a Metro version that supports the tls config
+  // TODO(@kitten): Remove cast once Metro is updated to a version that supports the tls config
   const tls = (metroConfig.server as typeof metroConfig.server & { tls?: SecureServerOptions })
     ?.tls;
   const secureServerOptions = tls

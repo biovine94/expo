@@ -2718,9 +2718,6 @@ importers:
       '@expo/json-file':
         specifier: workspace:~
         version: link:../json-file
-      '@expo/metro':
-        specifier: ~56.0.2
-        version: 56.0.2
       '@expo/require-utils':
         specifier: workspace:^
         version: link:../require-utils
@@ -2779,6 +2776,15 @@ importers:
         specifier: 0.84.5
         version: 0.84.5
       metro-config:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-core:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-file-map:
+        specifier: 0.84.5
+        version: 0.84.5
+      metro-resolver:
         specifier: 0.84.5
         version: 0.84.5
       metro-runtime:
@@ -2843,7 +2849,7 @@ importers:
         specifier: ^3.2.0
         version: 3.6.0
       metro-minify-terser:
-        specifier: ^0.84.2
+        specifier: 0.84.5
         version: 0.84.5
       sass:
         specifier: ^1.60.0
@@ -7923,9 +7929,6 @@ packages:
     resolution: {integrity: sha512-hxFzqdUNKCt+8pbGV3oGcd/aBNA1mmhwh3DSeXoHReypxzsiLYLITJs1OctglaPecfMA9qFb+6z/RIkRSf5S4g==}
     peerDependencies:
       '@modelcontextprotocol/sdk': ^1.26.0
-
-  '@expo/metro@56.0.2':
-    resolution: {integrity: sha512-Ld5AeYMCCDa8bLeWhfuLbZFFjlV3f6ORqyPz2glGh6RltIngMuLf9BTC2yvHFjkKuGxL5SynijmA8xmNNWn5iA==}
 
   '@expo/multipart-body-parser@1.1.0':
     resolution: {integrity: sha512-XOaS79wFIJgx0J7oUzRb+kZsnZmFqGpisu0r8RPO3b0wjbW7xpWgiXmRR4RavKeGiVAPauZOi4vad7cJ3KCspg==}
@@ -16955,27 +16958,6 @@ snapshots:
       zod-to-json-schema: 3.25.2(zod@3.25.76)
     transitivePeerDependencies:
       - bufferutil
-      - utf-8-validate
-
-  '@expo/metro@56.0.2':
-    dependencies:
-      metro: 0.84.5
-      metro-babel-transformer: 0.84.5
-      metro-cache: 0.84.5
-      metro-cache-key: 0.84.5
-      metro-config: 0.84.5
-      metro-core: 0.84.5
-      metro-file-map: 0.84.5
-      metro-minify-terser: 0.84.5
-      metro-resolver: 0.84.5
-      metro-runtime: 0.84.5
-      metro-source-map: 0.84.5
-      metro-symbolicate: 0.84.5
-      metro-transform-plugins: 0.84.5
-      metro-transform-worker: 0.84.5
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
       - utf-8-validate
 
   '@expo/multipart-body-parser@1.1.0':

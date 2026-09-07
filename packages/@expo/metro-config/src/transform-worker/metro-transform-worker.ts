@@ -1076,7 +1076,6 @@ export function getCacheKey(
     ...remainingConfig
   } = config;
 
-  // TODO(@kitten): We can now tie this into `@expo/metro`, which could also simply export a static version export
   const filesKey = getMetroCacheKey([
     require.resolve(babelTransformerPath),
     resolveMinifier(minifierPath),

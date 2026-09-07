@@ -100,9 +100,6 @@ function loadGenerator(): GeneratorCtor {
   return _Generator!;
 }
 
-// `.js` suffix required for jest's resolver to find the file under
-// `@expo/metro`'s `exports` map (see `getCssDeps.ts`/`getAssets.ts` for
-// the same pattern).
 type IsJsModule = typeof import('metro/private/DeltaBundler/Serializers/helpers/js').isJsModule;
 
 let _isJsModule: IsJsModule | undefined;

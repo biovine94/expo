@@ -78,7 +78,6 @@
     "@expo/config": "workspace:~",
     "@expo/env": "workspace:~",
     "@expo/json-file": "workspace:~",
-    "@expo/metro": "~56.0.2",
     "@expo/require-utils": "workspace:^",
     "@expo/spawn-async": "^1.8.0",
     "@jridgewell/gen-mapping": "^0.3.13",
@@ -98,6 +97,9 @@
     "metro-cache": "0.84.5",
     "metro-cache-key": "0.84.5",
     "metro-config": "0.84.5",
+    "metro-core": "0.84.5",
+    "metro-file-map": "0.84.5",
+    "metro-resolver": "0.84.5",
     "metro-runtime": "0.84.5",
     "metro-source-map": "0.84.5",
     "metro-transform-plugins": "0.84.5",
@@ -120,7 +122,7 @@
     "dedent": "^1.5.3",
     "expo-module-scripts": "workspace:*",
     "memfs": "^3.2.0",
-    "metro-minify-terser": "^0.84.2",
+    "metro-minify-terser": "0.84.5",
     "sass": "^1.60.0"
   },
   "peerDependencies": {

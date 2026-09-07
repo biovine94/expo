@@ -60,7 +60,7 @@ function attachAtlasToDevServer(
     return;
   }
 
-  // TODO(@kitten): Atlas' typings don't match @expo/metro yet
+  // TODO(@kitten): Atlas' typings don't match Metro's yet
   const instance = atlas.createExpoAtlasMiddleware(options.metroConfig as any);
   options.middleware.use('/_expo/atlas', instance.middleware);
   event('attached', { path: '/_expo/atlas' });
@@ -93,7 +93,7 @@ async function attachAtlasToExport(
     debugEvent('file_reset', { path: debugEvent.path(filePath) });
   }
 
-  // TODO(@kitten): Atlas' typings don't match @expo/metro yet
+  // TODO(@kitten): Atlas' typings don't match Metro's yet
   atlas.withExpoAtlas(options.metroConfig as any);
 }
 
