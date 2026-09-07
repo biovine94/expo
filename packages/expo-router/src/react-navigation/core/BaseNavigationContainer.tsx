@@ -12,7 +12,11 @@ import {
 import { GlobalRoutesWithRemovalPreventedContext } from '../../global-state/removalPrevention';
 import { RouteInfoContext } from '../../global-state/routeInfoContext';
 import { RouterConfigContext } from '../../global-state/routerConfigContext';
-import { RouterRegistryContext } from '../../global-state/routerRegistry';
+import {
+  RouterRegistrySettersContext,
+  type RouterRegistry,
+  type RouterRegistrySetters,
+} from '../../global-state/routerRegistry';
 import { RoutingQueueApiContext } from '../../global-state/routingQueueContext';
 import { useNavigationTreeReducer } from '../../global-state/useNavigationTreeReducer';
 import { useNavigationTreeReportEvents } from '../../global-state/useNavigationTreeReportEvents';
@@ -68,7 +72,6 @@ export function BaseNavigationContainer(props: InternalNavigationContainerProps)
   const inheritedRouteInfo = use(RouteInfoContext);
   const routerConfig = use(RouterConfigContext);
   const routingQueue = use(RoutingQueueApiContext);
-  const registry = use(RouterRegistryContext);
   const routesWithRemovalPrevented = use(GlobalRoutesWithRemovalPreventedContext);
 
   if (!parent.isDefault) {
@@ -77,29 +80,59 @@ export function BaseNavigationContainer(props: InternalNavigationContainerProps)
     );
   }
 
-  if (
-    routingQueue === undefined ||
-    registry === undefined ||
-    routesWithRemovalPrevented === undefined
-  ) {
+  if (routingQueue === undefined || routesWithRemovalPrevented === undefined) {
     throw new Error(
       'The navigation container requires the shared routing state provided by `ExpoRoot`. Render the navigation container inside `ExpoRoot`.'
     );
   }
 
   const emitter = useEventEmitter<NavigationContainerEventMap>();
+  const [registry, setRegistry] = React.useState<RouterRegistry>(() => new Map());
 
   // TODO(@ubax): consider moving this state to ExpoRoot.
-  const { state, report, consumeReportEvents, resetNavigator, handleAction, processIntent } =
-    useNavigationTreeReducer({
-      initialState,
-      routeNode: UNSTABLE_routeNode,
-      registry,
-      routesWithRemovalPrevented,
-      linking: routerConfig?.linking,
-      redirects: routerConfig?.redirects,
-    });
+  const {
+    state,
+    report,
+    consumeReportEvents,
+    resetNavigator,
+    navigatorUnmounted,
+    handleAction,
+    processIntent,
+  } = useNavigationTreeReducer({
+    initialState,
+    routeNode: UNSTABLE_routeNode,
+    registry,
+    routesWithRemovalPrevented,
+    linking: routerConfig?.linking,
+    redirects: routerConfig?.redirects,
+  });
   useNavigationTreeReportEvents(report, consumeReportEvents);
+  const registrySetters = React.useMemo<RouterRegistrySetters>(
+    () => ({
+      register(stateKey, entry) {
+        setRegistry((previous) => {
+          if (previous.get(stateKey) === entry) {
+            return previous;
+          }
+          return new Map(previous).set(stateKey, entry);
+        });
+      },
+      unregister(stateKey, entry) {
+        setRegistry((previous) => {
+          if (previous.get(stateKey) !== entry) {
+            return previous;
+          }
+          const next = new Map(previous);
+          next.delete(stateKey);
+          return next;
+        });
+        if (entry.routeNode) {
+          navigatorUnmounted(stateKey, entry.routeNode);
+        }
+      },
+    }),
+    [navigatorUnmounted]
+  );
 
   const { listeners, addListener } = useChildListeners();
 
@@ -280,9 +313,11 @@ export function BaseNavigationContainer(props: InternalNavigationContainerProps)
         <NavigationStateContext.Provider value={context}>
           <RouteInfoContext.Provider value={routeInfo}>
             <RootNavigationStateContext.Provider value={state}>
-              <EnsureSingleNavigator>
-                <ThemeProvider value={theme}>{children}</ThemeProvider>
-              </EnsureSingleNavigator>
+              <RouterRegistrySettersContext.Provider value={registrySetters}>
+                <EnsureSingleNavigator>
+                  <ThemeProvider value={theme}>{children}</ThemeProvider>
+                </EnsureSingleNavigator>
+              </RouterRegistrySettersContext.Provider>
               <RoutingQueueDrainer processIntent={processIntent} />
             </RootNavigationStateContext.Provider>
           </RouteInfoContext.Provider>

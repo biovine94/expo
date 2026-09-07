@@ -712,10 +712,7 @@ test("prevents removing a screen with 'removePrevented' event", () => {
     setPreventRemove(false);
   });
 
-  expect(onStateChange).toHaveBeenCalledTimes(2);
-
-  act(() => ref.current?.dispatchSync(StackActions.popTo('foo')));
-
+  // The pending action is replayed with the removal-prevention state from this render.
   expect(onStateChange).toHaveBeenCalledTimes(3);
   expect(onStateChange).toHaveBeenCalledWith({
     type: 'stack',

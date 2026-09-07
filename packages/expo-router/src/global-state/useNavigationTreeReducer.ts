@@ -6,7 +6,6 @@ import type { RouteNode } from '../Route';
 import type { ExpoLinkingOptions } from '../getLinkingConfig';
 import { warnIfScreenParam } from '../navigationParams';
 import { deepFreeze } from '../react-navigation/core/deepFreeze';
-import { useClientLayoutEffect } from '../react-navigation/core/useClientLayoutEffect';
 import type { InitialState, NavigationAction, NavigationState } from '../react-navigation/routers';
 import { getChainFromStateKey } from '../react-navigation/routers/stateKeys';
 import useLatestCallback from '../utils/useLatestCallback';
@@ -146,7 +145,8 @@ function warnUnhandledAction(action: NavigationAction) {
 
 function navigationTreeReducer(
   result: NavigationTreeResult,
-  { operation, config }: { operation: TreeOperation; config: ReducerConfig }
+  operation: TreeOperation,
+  config: ReducerConfig
 ): NavigationTreeResult {
   const state = result.state;
 
@@ -183,10 +183,23 @@ function navigationTreeReducer(
         );
         return result;
       }
-      return navigationTreeReducer(result, {
-        operation: { type: 'ACTION', payload: { action: resolution.action } },
-        config,
-      });
+      return navigationTreeReducer(
+        result,
+        { type: 'ACTION', payload: { action: resolution.action } },
+        config
+      );
+    }
+    case 'COMPUTED_ACTION': {
+      assertRootRouterRegistered(state, config.registry);
+      const action = operation.payload.compute(state, config.registry);
+      if (!action) {
+        return result;
+      }
+      return navigationTreeReducer(
+        result,
+        { type: 'ACTION', payload: { action, originKey: operation.payload.originKey } },
+        config
+      );
     }
     case 'ACTION': {
       assertRootRouterRegistered(state, config.registry);
@@ -267,7 +280,7 @@ function navigationTreeReducer(
       };
     }
     case 'NAVIGATOR_UNMOUNTED': {
-      if (!findStateByKey(state, operation.stateKey)) {
+      if (config.registry.has(operation.stateKey) || !findStateByKey(state, operation.stateKey)) {
         return result;
       }
       const replacement = createSeededNavigationState(
@@ -315,8 +328,16 @@ export function useNavigationTreeReducer({
   linking,
   redirects,
 }: Options) {
+  const config: ReducerConfig = {
+    registry,
+    routesWithRemovalPrevented,
+    routeNode,
+    linking,
+    redirects,
+  };
   const [result, reactDispatch] = React.useReducer(
-    navigationTreeReducer,
+    (result: NavigationTreeResult, operation: TreeOperation) =>
+      navigationTreeReducer(result, operation, config),
     initialState,
     (value): NavigationTreeResult => {
       validateInitialState(value);
@@ -329,27 +350,7 @@ export function useNavigationTreeReducer({
       return { state: deepFreeze(value), report: undefined, eventSeq: 0 };
     }
   );
-  const previousRegistryRef = React.useRef(registry);
-
-  const processAction = React.useCallback(
-    (operation: TreeOperation) =>
-      reactDispatch({
-        operation,
-        config: {
-          registry,
-          routesWithRemovalPrevented,
-          routeNode,
-          linking,
-          redirects,
-        },
-      }),
-    [linking, redirects, registry, routeNode, routesWithRemovalPrevented]
-  );
-  const process = React.useEffectEvent(processAction);
-  const processIntent = React.useCallback(
-    (intent: RoutingIntent) => processAction(intent),
-    [processAction]
-  );
+  const processIntent = React.useCallback((intent: RoutingIntent) => reactDispatch(intent), []);
   const handleAction = useLatestCallback((action: NavigationAction, originKey?: string) => {
     const payload =
       typeof action.payload === 'object' && action.payload !== null ? action.payload : undefined;
@@ -361,41 +362,28 @@ export function useNavigationTreeReducer({
         ? payload.params
         : undefined;
     warnIfScreenParam(params);
-    processAction({ type: 'ACTION', payload: { action, originKey } });
+    reactDispatch({ type: 'ACTION', payload: { action, originKey } });
   });
   const resetNavigator = useLatestCallback((stateKey: string, routerType: string | undefined) => {
-    processAction({ type: 'NAVIGATOR_CHANGED', stateKey, routerType });
+    reactDispatch({ type: 'NAVIGATOR_CHANGED', stateKey, routerType });
+  });
+  const navigatorUnmounted = useLatestCallback((stateKey: string, routeNode: RouteNode) => {
+    reactDispatch({ type: 'NAVIGATOR_UNMOUNTED', stateKey, routeNode });
   });
   const consumeReportEvents = useLatestCallback((eventIds: readonly number[]) => {
-    processAction({ type: 'REPORT_CONSUMED', eventIds });
+    reactDispatch({ type: 'REPORT_CONSUMED', eventIds });
   });
 
   React.useInsertionEffect(() => {
     warnIfStaleState(result.state);
   }, [result.state]);
 
-  useClientLayoutEffect(() => {
-    const previousRegistry = previousRegistryRef.current;
-    previousRegistryRef.current = registry;
-    for (const [stateKey, entry] of previousRegistry) {
-      if (!registry.has(stateKey) && entry.routeNode) {
-        // This runs inside an effect; the rule doesn't recognize the `useClientLayoutEffect`
-        // wrapper as one.
-        // oxlint-disable-next-line react-hooks/rules-of-hooks
-        process({
-          type: 'NAVIGATOR_UNMOUNTED',
-          stateKey,
-          routeNode: entry.routeNode,
-        });
-      }
-    }
-  }, [registry]);
-
   return {
     state: result.state,
     report: result.report,
     consumeReportEvents,
     resetNavigator,
+    navigatorUnmounted,
     handleAction,
     processIntent,
   };

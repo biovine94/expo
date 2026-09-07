@@ -360,6 +360,93 @@ it('reduces consecutive queued intents against accumulated state', () => {
   expect(result.result.current.state.index).toBe(2);
 });
 
+it('uses the registry from the render that reduces an operation', () => {
+  const firstReduce = jest.fn(() => null);
+  const secondReduce = jest.fn((state: NavigationState) => ({
+    state: { ...state, index: 1 },
+    affectedRouteKey: state.routes[1]!.key,
+  }));
+  const result = renderReducer({ registry: new Map([['root', entry(firstReduce)]]) });
+  const processIntent = result.result.current.processIntent;
+
+  result.rerender({
+    registry: new Map([['root', entry(secondReduce)]]),
+    routesWithRemovalPrevented: new Set(),
+  });
+  act(() =>
+    processIntent({ type: 'ACTION', payload: { action: { type: 'USE_CURRENT_REGISTRY' } } })
+  );
+
+  expect(result.result.current.processIntent).toBe(processIntent);
+  expect(firstReduce).not.toHaveBeenCalled();
+  expect(secondReduce).toHaveBeenCalledTimes(1);
+  expect(result.result.current.state.index).toBe(1);
+});
+
+it('uses removal prevention from the render that reduces an operation', () => {
+  const reduce = jest.fn((state: NavigationState) => ({
+    state: { ...state, routes: state.routes.slice(0, 1) },
+    affectedRouteKey: state.routes[0]!.key,
+  }));
+  const result = renderReducer({ registry: new Map([['root', entry(reduce)]]) });
+  const processIntent = result.result.current.processIntent;
+
+  result.rerender({
+    registry: new Map([['root', entry(reduce)]]),
+    routesWithRemovalPrevented: new Set(['third']),
+  });
+  act(() => processIntent({ type: 'ACTION', payload: { action: { type: 'REMOVE' } } }));
+
+  expect(result.result.current.state).toBe(initialState);
+  expect(result.result.current.report?.events).toEqual([
+    expect.objectContaining({ type: 'prevented-routes', routeKeys: ['third'] }),
+  ]);
+});
+
+it('computes a queued action from accumulated state', () => {
+  const tabState: NavigationState = {
+    ...initialState,
+    type: 'tab',
+    routeNames: ['first', 'second'],
+    routes: [
+      { key: 'first', name: 'first', state: { ...initialState, key: 'first-stack' } },
+      { key: 'second', name: 'second', state: { ...initialState, key: 'second-stack' } },
+    ],
+  };
+  const reduce = jest.fn((state: NavigationState, action: NavigationAction) => {
+    if (action.type === 'FOCUS_SECOND') {
+      return { state: { ...state, index: 1 }, affectedRouteKey: state.routes[1]!.key };
+    }
+    if (action.type === 'JUMP_TO' || action.type === 'NAVIGATE') {
+      return { state: { ...state, index: 0 }, affectedRouteKey: state.routes[0]!.key };
+    }
+    return null;
+  });
+  const result = renderReducer({ state: tabState, registry: new Map([['root', entry(reduce)]]) });
+
+  act(() => {
+    result.result.current.processIntent({
+      type: 'ACTION',
+      payload: { action: { type: 'FOCUS_SECOND' } },
+    });
+    result.result.current.processIntent({
+      type: 'COMPUTED_ACTION',
+      payload: {
+        originKey: 'root',
+        compute: (state) => ({
+          type: state.index === 1 ? 'JUMP_TO' : 'NAVIGATE',
+          payload: { name: 'first' },
+        }),
+      },
+    });
+  });
+
+  expect(reduce).toHaveBeenCalledTimes(2);
+  expect(reduce.mock.calls[1]![0].index).toBe(1);
+  expect(reduce.mock.calls[1]![1].type).toBe('JUMP_TO');
+  expect(result.result.current.state.index).toBe(0);
+});
+
 it('warns for direct navigation actions carrying a screen param', () => {
   const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
   const result = renderReducer({
@@ -426,6 +513,7 @@ it('resets a state slice when its router unregisters', () => {
     registry: new Map(),
     routesWithRemovalPrevented: new Set(),
   });
+  act(() => result.result.current.navigatorUnmounted('root', routeNode));
 
   expect(result.result.current.state).toMatchObject({
     index: 0,
@@ -459,6 +547,7 @@ it('ignores a router type change for an unknown state key', () => {
 });
 
 it('does not reset a state slice when its router entry is replaced', () => {
+  const routeNode = node('root', [node('first')]);
   const result = renderReducer({
     registry: new Map([['root', entry(() => null)]]),
   });
@@ -467,6 +556,7 @@ it('does not reset a state slice when its router entry is replaced', () => {
     registry: new Map([['root', entry(() => null)]]),
     routesWithRemovalPrevented: new Set(),
   });
+  act(() => result.result.current.navigatorUnmounted('root', routeNode));
 
   expect(result.result.current.state).toBe(initialState);
 });
