@@ -70,6 +70,7 @@ export {
 } from './primitives';
 
 export {
+  IsWithinNativeNavigator,
   unstable_createStandardRouterNavigator,
   unstable_integrateWithRouter,
 } from './standard-navigation';
@@ -77,6 +78,7 @@ export type {
   IntegrateWithRouterOptions,
   NavigatorContentProps,
   StandardNavigatorDescriptor,
+  StandardNavigatorEmit,
   StandardNavigatorEventMapBase,
   StandardUseNavigationBuilderOptions,
 } from './standard-navigation';

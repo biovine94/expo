@@ -44,8 +44,15 @@ export type {
   StackNavigationEventMap,
   StackNavigationOptions,
   StackNavigationProp,
+  StackNavigationConfig,
   StackNavigatorProps,
   StackOptionsArgs,
   StackScreenProps,
+  StackViewEmit,
+  StackViewState,
   TransitionPreset,
 } from './types';
+export type {
+  StackNavigatorCreateProps,
+  StandardStackNavigationEventMap,
+} from './navigators/createStackNavigator';

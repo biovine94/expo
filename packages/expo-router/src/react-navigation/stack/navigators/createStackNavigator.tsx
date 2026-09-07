@@ -62,6 +62,9 @@ function StackNavigatorContent({
   );
 }
 
+/**
+ * Creates a JavaScript stack navigator compatible with `standard-navigation`.
+ */
 export const createStandardStackNavigator = createStandardNavigator<
   StackNavigationOptions,
   StandardStackNavigationEventMap,

@@ -10,10 +10,8 @@ export function useStandardState(builderState: NavigationState): NavigatorState 
     return {
       index: builderState.index,
       routes: builderState.routes.map<NavigatorState['routes'][number]>((route) => ({
+        ...route,
         href: buildHref(route),
-        key: route.key,
-        name: route.name,
-        params: route.params,
       })),
     };
   }, [builderState, buildHref]);

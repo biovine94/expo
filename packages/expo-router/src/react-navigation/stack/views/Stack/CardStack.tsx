@@ -97,9 +97,7 @@ const STATE_INACTIVE = 0;
 const STATE_TRANSITIONING_OR_BELOW_TOP = 1;
 const STATE_ON_TOP = 2;
 
-const FALLBACK_DESCRIPTOR = Object.freeze({
-  options: {} as StackNavigationOptions,
-});
+const FALLBACK_DESCRIPTOR = Object.freeze({ options: {} as StackNavigationOptions });
 
 const getInterpolationIndex = (scenes: Scene[], index: number) => {
   const { cardStyleInterpolator } = scenes[index]!.descriptor.options;

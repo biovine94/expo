@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import type { Animated, ColorValue, StyleProp, TextStyle, ViewStyle } from 'react-native';
 
+import type { StandardNavigatorEmit } from '../../standard-navigation';
 import type {
   HeaderBackButton,
   HeaderBackButtonDisplayMode,
@@ -47,19 +48,7 @@ export type StackNavigationEventMap = {
   gestureCancel: { data: undefined };
 };
 
-export type StackViewEmit = (
-  event:
-    | {
-        type: 'transitionStart' | 'transitionEnd';
-        target?: string;
-        data: { closing: boolean };
-      }
-    | {
-        type: 'gestureStart' | 'gestureEnd' | 'gestureCancel';
-        target?: string;
-        data?: undefined;
-      }
-) => void;
+export type StackViewEmit = StandardNavigatorEmit<StackNavigationEventMap>;
 
 export type StackViewState = Pick<StackNavigationState<ParamListBase>, 'index' | 'routes'>;
 
