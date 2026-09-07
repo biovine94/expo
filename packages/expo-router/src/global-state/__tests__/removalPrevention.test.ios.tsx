@@ -2,10 +2,10 @@ import { act, render } from '@testing-library/react-native';
 import * as React from 'react';
 import { use } from 'react';
 
+import { IsPreloadedContext } from '../../react-navigation/core/IsPreloadedContext';
 import {
   GlobalRoutesWithRemovalPreventedContext,
   GlobalRemovalEventEmitterRegistryContext,
-  isRouteRemovalPrevented,
   PreventRemovalProvider,
   RemovalPreventionProvider,
   ScreenRemovalPreventionSetterContext,
@@ -47,27 +47,71 @@ test('aggregates prevention across routes', () => {
   expect(routes.at(-1)).toEqual(new Set());
 });
 
-test('detects prevention in an active descendant but not a preloaded route', () => {
-  const route = {
-    key: 'parent',
-    name: 'parent',
-    state: {
-      stale: false as const,
-      type: 'stack',
-      key: 'stack',
-      routeKeySeq: 0,
-      index: 0,
-      routeNames: ['active', 'preloaded'],
-      routes: [
-        { key: 'active', name: 'active' },
-        { key: 'preloaded', name: 'preloaded' },
-      ],
-    },
-  };
+test('propagates prevention from a child route to its parent route', () => {
+  let setChildPrevented: React.ContextType<typeof ScreenRemovalPreventionSetterContext>;
+  const routes: ReadonlySet<string>[] = [];
+  function CaptureChildSetter() {
+    setChildPrevented = use(ScreenRemovalPreventionSetterContext);
+    return null;
+  }
+  function RoutesCapture() {
+    routes.push(use(GlobalRoutesWithRemovalPreventedContext)!);
+    return null;
+  }
+  render(
+    <RemovalPreventionProvider>
+      <PreventRemovalProvider routeKey="parent">
+        <PreventRemovalProvider routeKey="child">
+          <CaptureChildSetter />
+        </PreventRemovalProvider>
+      </PreventRemovalProvider>
+      <RoutesCapture />
+    </RemovalPreventionProvider>
+  );
 
-  expect(isRouteRemovalPrevented(route, new Set(['active']))).toBe(true);
-  expect(isRouteRemovalPrevented(route, new Set(['preloaded']))).toBe(false);
-  expect(isRouteRemovalPrevented(route, new Set(['parent']))).toBe(true);
+  act(() => setChildPrevented!('guard', true));
+  expect(routes.at(-1)).toEqual(new Set(['child', 'parent']));
+
+  act(() => setChildPrevented!('guard', false));
+  expect(routes.at(-1)).toEqual(new Set());
+});
+
+test('does not register prevention for a preloaded child route and re-registers when active', () => {
+  const routes: ReadonlySet<string>[] = [];
+  function Guard() {
+    const setPrevented = use(ScreenRemovalPreventionSetterContext)!;
+    React.useLayoutEffect(() => {
+      setPrevented('guard', true);
+      return () => setPrevented('guard', false);
+    }, [setPrevented]);
+    return null;
+  }
+  function RoutesCapture() {
+    routes.push(use(GlobalRoutesWithRemovalPreventedContext)!);
+    return null;
+  }
+  function Tree({ isPreloaded }: { isPreloaded: boolean }) {
+    return (
+      <RemovalPreventionProvider>
+        <PreventRemovalProvider routeKey="parent">
+          <IsPreloadedContext value={isPreloaded}>
+            <PreventRemovalProvider routeKey="child">
+              <Guard />
+            </PreventRemovalProvider>
+          </IsPreloadedContext>
+        </PreventRemovalProvider>
+        <RoutesCapture />
+      </RemovalPreventionProvider>
+    );
+  }
+  const result = render(<Tree isPreloaded />);
+  expect(routes.at(-1)).toEqual(new Set());
+
+  result.rerender(<Tree isPreloaded={false} />);
+  expect(routes.at(-1)).toEqual(new Set(['child', 'parent']));
+
+  result.rerender(<Tree isPreloaded />);
+  expect(routes.at(-1)).toEqual(new Set());
 });
 
 test('keeps a route emitter until the end of the task after its provider unmounts', async () => {
