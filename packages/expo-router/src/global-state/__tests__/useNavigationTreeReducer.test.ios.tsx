@@ -385,19 +385,15 @@ it('warns for direct navigation actions carrying a screen param', () => {
   warn.mockRestore();
 });
 
-it('logs an error when an action is dispatched before its router registers', () => {
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+it('throws when an action is dispatched before its router registers', () => {
   const result = renderReducer({ registry: new Map() });
 
-  act(() => result.result.current.handleAction({ type: 'TEST' }));
-
-  expect(error).toHaveBeenCalledWith(expect.stringContaining("The action 'TEST'"));
-  expect(result.result.current.state).toBe(initialState);
-  error.mockRestore();
+  expect(() => act(() => result.result.current.handleAction({ type: 'TEST' }))).toThrow(
+    'Attempted to navigate before the root layout mounted a navigator.'
+  );
 });
 
-it('logs an error for a later action after a same-batch reset changes the registered state key', () => {
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+it('throws for a later action after a same-batch reset changes the registered state key', () => {
   const registryEntry = entry((state, action) =>
     action.type === 'RESET_KEY'
       ? {
@@ -410,14 +406,12 @@ it('logs an error for a later action after a same-batch reset changes the regist
     registry: new Map([['root', registryEntry]]),
   });
 
-  act(() => {
-    result.result.current.handleAction({ type: 'RESET_KEY' });
-    result.result.current.handleAction({ type: 'NEXT' });
-  });
-
-  expect(error).toHaveBeenCalledWith(expect.stringContaining("The action 'NEXT'"));
-  expect(result.result.current.state.key).toBe('next-root');
-  error.mockRestore();
+  expect(() =>
+    act(() => {
+      result.result.current.handleAction({ type: 'RESET_KEY' });
+      result.result.current.handleAction({ type: 'NEXT' });
+    })
+  ).toThrow('Attempted to navigate before the root layout mounted a navigator.');
 });
 
 it('resets a state slice when its router unregisters', () => {
@@ -505,11 +499,21 @@ describe('NAVIGATE_TO_HREF', () => {
     );
   }
 
+  it('throws before resolving when the root router is missing', () => {
+    const result = renderReducer({ registry: new Map() });
+
+    expect(() => navigateToHref(result)).toThrow(
+      'Attempted to navigate before the root layout mounted a navigator.'
+    );
+    expect(mockGetNavigateAction).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('warns and keeps the state when resolving the href throws', () => {
     mockGetNavigateAction.mockImplementation(() => {
       throw new Error('boom');
     });
-    const result = renderReducer({ registry: new Map() });
+    const result = renderReducer({ registry: new Map([['root', entry(() => null)]]) });
 
     navigateToHref(result);
 
@@ -522,7 +526,7 @@ describe('NAVIGATE_TO_HREF', () => {
       status: 'invalid',
       href: '/resolved',
     });
-    const result = renderReducer({ registry: new Map() });
+    const result = renderReducer({ registry: new Map([['root', entry(() => null)]]) });
 
     navigateToHref(result);
 
@@ -535,7 +539,7 @@ describe('NAVIGATE_TO_HREF', () => {
       status: 'invalid',
       href: '/resolved',
     });
-    const result = renderReducer({ registry: new Map() });
+    const result = renderReducer({ registry: new Map([['root', entry(() => null)]]) });
 
     navigateToHref(result, { originalHref: 'myapp://original' });
 

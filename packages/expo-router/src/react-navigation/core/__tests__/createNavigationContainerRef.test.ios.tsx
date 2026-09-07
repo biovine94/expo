@@ -11,6 +11,12 @@ beforeEach(() => {
   MockRouterKey.current = 0;
 });
 
+test('isReady always returns true', () => {
+  const ref = createNavigationContainerRef<ParamListBase>();
+
+  expect(ref.isReady()).toBe(true);
+});
+
 test('adds the listener even if container is mounted later', () => {
   const ref = createNavigationContainerRef<ParamListBase>();
   const listener = jest.fn();

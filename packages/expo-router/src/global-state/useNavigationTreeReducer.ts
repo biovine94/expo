@@ -152,6 +152,7 @@ function navigationTreeReducer(
 
   switch (operation.type) {
     case 'NAVIGATE_TO_HREF': {
+      assertRootRouterRegistered(state, config.registry);
       const { href, options } = operation.payload;
       let resolution: ReturnType<typeof getNavigateAction>;
       try {
@@ -188,6 +189,7 @@ function navigationTreeReducer(
       });
     }
     case 'ACTION': {
+      assertRootRouterRegistered(state, config.registry);
       const tree = indexNavigationTree(state);
       const origin = resolveOrigin(
         tree.rootNode,
@@ -397,6 +399,14 @@ export function useNavigationTreeReducer({
     handleAction,
     processIntent,
   };
+}
+
+function assertRootRouterRegistered(state: NavigationState, registry: RouterRegistry): void {
+  if (!registry.has(state.key)) {
+    throw new Error(
+      'Attempted to navigate before the root layout mounted a navigator. Expo Router builds its navigation tree from the navigator you render, so there is nothing to navigate until one exists. Render a `Slot`, `Stack`, or another navigator on the first render of your root layout.'
+    );
+  }
 }
 
 const EMPTY_SET: ReadonlySet<string> = new Set();

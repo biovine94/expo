@@ -400,10 +400,6 @@ export type NavigationContainerProps = {
    */
   initialState?: InitialState;
   /**
-   * Callback which is called after the navigation tree mounts.
-   */
-  onReady?: () => void;
-  /**
    * Callback which is called when an action is not handled.
    * TODO(@ubax): restore this callback. https://linear.app/expo/issue/ENG-26123
    */
@@ -731,12 +727,6 @@ export type RouteGroupConfig<
 
 export type NavigationContainerEventMap = {
   /**
-   * Event that fires when the navigation container is ready to be used.
-   */
-  ready: {
-    data: undefined;
-  };
-  /**
    * Event that fires when the navigation state changes.
    */
   state: {
@@ -774,7 +764,8 @@ export type NavigationContainerRef<ParamList extends {}> = NavigationHelpers<Par
      */
     getCurrentOptions(): object | undefined;
     /**
-     * Whether the navigation container is ready to handle actions.
+     * @deprecated Always returns `true`. Expo Router has no ready state; navigating before a
+     * navigator mounts throws instead of being deferred.
      */
     isReady(): boolean;
     /**
